@@ -1,0 +1,272 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with role, streak, and preferences",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string", "maxLength": 40 },
+        "username": { "type": "string", "maxLength": 20, "minLength": 3 },
+        "usernameLower": { "type": "string", "maxLength": 20, "minLength": 3 },
+        "usernameChangedAt": { "type": "string" },
+        "bio": { "type": "string", "maxLength": 160 },
+        "photoURL": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["student", "teacher", "admin"] },
+        "createdAt": { "type": "string" },
+        "lastActiveAt": { "type": "string" },
+        "streak": { "type": "number" },
+        "fcmTokens": { "type": "array" },
+        "blockedUids": { "type": "array" }
+      },
+      "required": ["displayName", "email", "role"]
+    },
+    "UsernameDoc": {
+      "title": "UsernameDoc",
+      "description": "Unique username tracking doc",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" }
+      },
+      "required": ["uid"]
+    },
+    "TeacherApplication": {
+      "title": "TeacherApplication",
+      "description": "Application submitted by student to become a teacher",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "reason": { "type": "string", "maxLength": 2000 },
+        "experience": { "type": "string", "maxLength": 1000 },
+        "files": { "type": "array" },
+        "status": { "type": "string", "enum": ["submitted", "review", "approved", "declined"] },
+        "adminNote": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "reviewedBy": { "type": "string" },
+        "reviewedAt": { "type": "string" }
+      },
+      "required": ["uid", "reason", "status"]
+    },
+    "Lesson": {
+      "title": "Lesson",
+      "description": "Bloom's taxonomy lesson created by a teacher",
+      "type": "object",
+      "properties": {
+        "teacherId": { "type": "string" },
+        "teacherName": { "type": "string" },
+        "title": { "type": "string", "maxLength": 100 },
+        "descriptionHtml": { "type": "string", "maxLength": 10000 },
+        "thumbnailPath": { "type": "string" },
+        "thumbnailUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["draft", "published"] },
+        "unlockMode": { "type": "string", "enum": ["sequential", "open"] },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "files": { "type": "array" }
+      },
+      "required": ["teacherId", "title", "status"]
+    },
+    "Activity": {
+      "title": "Activity",
+      "description": "Activity attached to a specific Bloom level (1-6)",
+      "type": "object",
+      "properties": {
+        "bloomLevel": { "type": "number", "enum": [1, 2, 3, 4, 5, 6] },
+        "type": { "type": "string", "enum": ["voice_recording", "ai_speaking", "file_upload", "quiz", "text_response"] },
+        "title": { "type": "string", "maxLength": 100 },
+        "instructionsHtml": { "type": "string", "maxLength": 5000 },
+        "fileRefs": { "type": "array" },
+        "requiresReview": { "type": "boolean" },
+        "order": { "type": "number" },
+        "settings": { "type": "object" }
+      },
+      "required": ["bloomLevel", "type", "title"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "Lesson discussion comment or reply",
+      "type": "object",
+      "properties": {
+        "lessonId": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorUsername": { "type": "string" },
+        "authorPhoto": { "type": "string" },
+        "authorRole": { "type": "string" },
+        "text": { "type": "string", "maxLength": 1000 },
+        "parentId": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "editedAt": { "type": "string" },
+        "deleted": { "type": "boolean" },
+        "reportCount": { "type": "number" }
+      },
+      "required": ["authorId", "text", "createdAt"]
+    },
+    "Conversation": {
+      "title": "Conversation",
+      "description": "Direct message thread between two users",
+      "type": "object",
+      "properties": {
+        "participants": { "type": "array" },
+        "lastMessage": { "type": "string" },
+        "lastMessageAt": { "type": "string" },
+        "unread": { "type": "object" },
+        "mutedBy": { "type": "array" }
+      },
+      "required": ["participants"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Direct chat message",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "text": { "type": "string", "maxLength": 2000 },
+        "createdAt": { "type": "string" },
+        "readBy": { "type": "array" }
+      },
+      "required": ["senderId", "text", "createdAt"]
+    },
+    "Submission": {
+      "title": "Submission",
+      "description": "Student work submission for a Bloom level activity",
+      "type": "object",
+      "properties": {
+        "lessonId": { "type": "string" },
+        "lessonTitle": { "type": "string" },
+        "activityId": { "type": "string" },
+        "bloomLevel": { "type": "number" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "type": { "type": "string" },
+        "files": { "type": "array" },
+        "textAnswer": { "type": "string" },
+        "audioUrl": { "type": "string" },
+        "score": { "type": "number" },
+        "transcript": { "type": "string" },
+        "aiFeedback": { "type": "object" },
+        "aiSessionId": { "type": "string" },
+        "status": { "type": "string", "enum": ["draft", "pending", "approved", "revise", "passed", "failed"] },
+        "teacherFeedback": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "reviewedAt": { "type": "string" }
+      },
+      "required": ["lessonId", "activityId", "studentId", "bloomLevel", "status"]
+    },
+    "Progress": {
+      "title": "Progress",
+      "description": "Student progress per lesson across all 6 levels",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "lessonId": { "type": "string" },
+        "levelStatus": { "type": "object" },
+        "percent": { "type": "number" },
+        "completedActivitiesCount": { "type": "number" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["studentId", "lessonId"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "User notification for submission reviews, comments, and messages",
+      "type": "object",
+      "properties": {
+        "recipientId": { "type": "string" },
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "type": { "type": "string" },
+        "link": { "type": "string" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["recipientId", "title", "body", "read"]
+    },
+    "Report": {
+      "title": "Report",
+      "description": "Flagged content for admin review",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["comment", "message", "user", "lesson"] },
+        "targetPath": { "type": "string" },
+        "targetId": { "type": "string" },
+        "reporterId": { "type": "string" },
+        "reason": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "reviewed", "dismissed"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["type", "reporterId", "reason", "status"]
+    },
+    "PlatformSettings": {
+      "title": "PlatformSettings",
+      "description": "Global settings configured by admin",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "aiPromptDefault": { "type": "string" },
+        "aiDailyMinutes": { "type": "number" },
+        "usernameCooldownDays": { "type": "number" },
+        "uploadLimits": { "type": "object" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles"
+    },
+    "/usernames/{usernameLower}": {
+      "schema": { "$ref": "#/entities/UsernameDoc" },
+      "description": "Unique username registry"
+    },
+    "/teacherApplications/{uid}": {
+      "schema": { "$ref": "#/entities/TeacherApplication" },
+      "description": "Teacher role applications"
+    },
+    "/lessons/{lessonId}": {
+      "schema": { "$ref": "#/entities/Lesson" },
+      "description": "Bloom's taxonomy lessons"
+    },
+    "/lessons/{lessonId}/activities/{activityId}": {
+      "schema": { "$ref": "#/entities/Activity" },
+      "description": "6 Bloom activities per lesson"
+    },
+    "/lessons/{lessonId}/comments/{commentId}": {
+      "schema": { "$ref": "#/entities/Comment" },
+      "description": "Discussion comments on lessons"
+    },
+    "/conversations/{convId}": {
+      "schema": { "$ref": "#/entities/Conversation" },
+      "description": "Direct message conversations"
+    },
+    "/conversations/{convId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/Message" },
+      "description": "Direct messages"
+    },
+    "/submissions/{submissionId}": {
+      "schema": { "$ref": "#/entities/Submission" },
+      "description": "Student activity submissions"
+    },
+    "/progress/{progressId}": {
+      "schema": { "$ref": "#/entities/Progress" },
+      "description": "Student lesson completion status"
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/Notification" },
+      "description": "In-app alerts and notifications"
+    },
+    "/reports/{reportId}": {
+      "schema": { "$ref": "#/entities/Report" },
+      "description": "Content moderation reports"
+    },
+    "/settings/{settingDoc}": {
+      "schema": { "$ref": "#/entities/PlatformSettings" },
+      "description": "Platform settings"
+    }
+  }
+}

@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #6d28d9;
+  --color-primary-light: #ede5ff;
+  --color-primary-mid: #8b5cf6;
+  --color-bg-canvas: #f7f4ff;
+  --color-surface: #ffffff;
+  --color-text-main: #1c1530;
+  --color-text-secondary: #5b5470;
+  --color-border-subtle: #e6e0f5;
+  --radius-card: 18px;
+  --radius-button: 14px;
+}
+
+:root {
+  --color-brand-primary: #6d28d9;
+  --color-brand-light: #ede5ff;
+  --color-brand-mid: #8b5cf6;
+  --color-brand-bg: #f7f4ff;
+  --color-brand-surface: #ffffff;
+  --color-brand-text: #1c1530;
+  --color-brand-muted: #5b5470;
+  --color-brand-border: #e6e0f5;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root.dark-mode {
+    --color-brand-primary: #8b5cf6;
+    --color-brand-light: #2a1b4e;
+    --color-brand-mid: #a78bfa;
+    --color-brand-bg: #0f0a1c;
+    --color-brand-surface: #18122b;
+    --color-brand-text: #f3f0fc;
+    --color-brand-muted: #a49cb5;
+    --color-brand-border: #2e234c;
+  }
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--color-brand-bg);
+  color: var(--color-brand-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d8cff0;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #8b5cf6;
+}
+
+/* TipTap Editor Styles */
+.tiptap {
+  outline: none;
+  min-height: 120px;
+}
+
+.tiptap p {
+  margin-bottom: 0.5rem;
+}
+
+.tiptap ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.tiptap ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.tiptap a {
+  color: #6d28d9;
+  text-decoration: underline;
+}

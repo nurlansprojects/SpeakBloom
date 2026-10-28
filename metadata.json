@@ -1,0 +1,6 @@
+{
+  "name": "SpeakBloom",
+  "description": "Speak English with confidence, organized by the six numbered levels of Bloom's Taxonomy.",
+  "requestFramePermissions": ["CAMERA", "MICROPHONE"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
