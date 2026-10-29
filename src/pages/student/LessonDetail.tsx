@@ -23,6 +23,7 @@ import {
 import { ChevronLeft, Lock, Check, Download, AlertCircle } from 'lucide-react';
 import { RichTextView } from '../../components/common/RichTextView';
 import { ActivityIcon } from '../../components/common/ActivityIcon';
+import { resolveFileUrl } from '../../firebase/storageService';
 import { FileCard } from '../../components/common/FileCard';
 import { LessonComments } from '../../components/lessons/LessonComments';
 
@@ -177,8 +178,9 @@ export const LessonDetail: React.FC = () => {
       // Trigger individual downloads for attached files
       for (const f of lesson.files) {
         if (f.downloadUrl) {
+          const actionableUrl = await resolveFileUrl(f.downloadUrl);
           const a = document.createElement('a');
-          a.href = f.downloadUrl;
+          a.href = actionableUrl;
           a.download = f.displayName || f.originalFileName;
           document.body.appendChild(a);
           a.click();

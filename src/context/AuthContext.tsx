@@ -151,13 +151,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateProfileData = async (data: Partial<UserProfile>) => {
-    if (!firebaseUser || !profile) return;
+    if (!firebaseUser) return;
     try {
+      // Optimistic state update for instant UI feedback
+      setProfile((prev) => (prev ? { ...prev, ...data } : null));
+
       const userDocRef = doc(db, 'users', firebaseUser.uid);
-      await updateDoc(userDocRef, {
-        ...data,
-        updatedAt: new Date().toISOString(),
-      });
+      await setDoc(
+        userDocRef,
+        {
+          ...data,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `users/${firebaseUser.uid}`);
     }

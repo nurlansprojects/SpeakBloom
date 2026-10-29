@@ -229,12 +229,12 @@ export const LessonEditor: React.FC = () => {
       const ext = file.name.split('.').pop()?.toLowerCase();
       let kind: 'mp3' | 'mp4' | 'pptx' | null = null;
 
-      if (['mp3', 'wav', 'm4a', 'aac', 'ogg'].includes(ext || '')) kind = 'mp3';
-      else if (['mp4', 'mov', 'webm', 'm4v'].includes(ext || '')) kind = 'mp4';
-      else if (['pptx', 'ppt'].includes(ext || '')) kind = 'pptx';
+      if (['mp3', 'wav', 'm4a', 'aac', 'ogg', 'flac', 'weba'].includes(ext || '')) kind = 'mp3';
+      else if (['mp4', 'mov', 'webm', 'm4v', 'mkv', 'avi'].includes(ext || '')) kind = 'mp4';
+      else if (['pptx', 'ppt', 'pdf', 'docx', 'doc', 'zip', 'txt'].includes(ext || '')) kind = 'pptx';
 
       if (!kind) {
-        setErrorMessage('Allowed lesson file formats are MP3, MP4, and PPTX (and related audio/video formats).');
+        setErrorMessage('Allowed formats: audio (MP3, WAV, M4A), video (MP4, MOV, WEBM), or presentation/documents (PPTX, PDF, DOCX).');
         e.target.value = '';
         return;
       }
@@ -400,10 +400,9 @@ export const LessonEditor: React.FC = () => {
 
       const lessonDoc = cleanObjectForFirestore(rawLessonDoc);
 
-      // Save main lesson document
-      await setDoc(doc(db, 'lessons', currentId), lessonDoc);
+      // Save main lesson document and all 6 activities in parallel for instant publishing
+      const saveTasks = [setDoc(doc(db, 'lessons', currentId), lessonDoc)];
 
-      // Save all 6 activities in subcollection
       const levels: BloomLevelNumber[] = [1, 2, 3, 4, 5, 6];
       for (const lvl of levels) {
         const act = activities[lvl];
@@ -420,8 +419,10 @@ export const LessonEditor: React.FC = () => {
           settings: act?.settings || {},
         };
         const sanitizedAct = cleanObjectForFirestore(rawAct);
-        await setDoc(doc(db, 'lessons', currentId, 'activities', rawAct.id), sanitizedAct);
+        saveTasks.push(setDoc(doc(db, 'lessons', currentId, 'activities', rawAct.id), sanitizedAct));
       }
+
+      await Promise.all(saveTasks);
 
       setStatus(targetStatus);
       navigate('/teacher');

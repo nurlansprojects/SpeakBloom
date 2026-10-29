@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Download, Music, Video, FileText, Play, Pause, Trash2, Eye } from 'lucide-react';
 import { LessonFile } from '../../types';
 
+import { resolveFileUrl } from '../../firebase/storageService';
+
 interface FileCardProps {
   file: LessonFile;
   onDelete?: () => void;
@@ -24,6 +26,7 @@ export const FileCard: React.FC<FileCardProps> = ({
 }) => {
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [audioEl, setAudioEl] = useState<HTMLAudioElement | null>(null);
+  const [resolvedVideoUrl, setResolvedVideoUrl] = useState<string | null>(null);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
@@ -38,30 +41,44 @@ export const FileCard: React.FC<FileCardProps> = ({
     }
   };
 
-  const handleToggleAudio = () => {
+  const handleToggleAudio = async () => {
     if (!file.downloadUrl) return;
     if (isPlayingAudio && audioEl) {
       audioEl.pause();
       setIsPlayingAudio(false);
     } else {
-      let player = audioEl;
-      if (!player) {
-        player = new Audio(file.downloadUrl);
-        player.onended = () => setIsPlayingAudio(false);
-        player.onerror = () => setIsPlayingAudio(false);
-        setAudioEl(player);
+      try {
+        const actionableUrl = await resolveFileUrl(file.downloadUrl);
+        let player = audioEl;
+        if (!player || player.src !== actionableUrl) {
+          player = new Audio(actionableUrl);
+          player.onended = () => setIsPlayingAudio(false);
+          player.onerror = () => setIsPlayingAudio(false);
+          setAudioEl(player);
+        }
+        player.play();
+        setIsPlayingAudio(true);
+      } catch (err) {
+        console.error('Audio playback error:', err);
+        setIsPlayingAudio(false);
       }
-      player.play();
-      setIsPlayingAudio(true);
     }
+  };
+
+  const handleOpenVideo = async () => {
+    if (!file.downloadUrl) return;
+    const actionableUrl = await resolveFileUrl(file.downloadUrl);
+    setResolvedVideoUrl(actionableUrl);
+    setShowVideoModal(true);
   };
 
   const handleDownload = async () => {
     if (!file.downloadUrl) return;
     try {
       setDownloading(true);
+      const actionableUrl = await resolveFileUrl(file.downloadUrl);
       const link = document.createElement('a');
-      link.href = file.downloadUrl;
+      link.href = actionableUrl;
       link.download = file.displayName || file.originalFileName;
       link.target = '_blank';
       document.body.appendChild(link);
@@ -125,7 +142,7 @@ export const FileCard: React.FC<FileCardProps> = ({
           {file.kind === 'mp4' && file.downloadUrl && (
             <button
               type="button"
-              onClick={() => setShowVideoModal(true)}
+              onClick={handleOpenVideo}
               className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] text-xs font-semibold text-[#6D28D9] bg-[#EDE5FF] hover:bg-[#d8cff0] rounded-[14px] transition-colors"
               aria-label="Watch video"
             >
@@ -163,7 +180,7 @@ export const FileCard: React.FC<FileCardProps> = ({
       </div>
 
       {/* Video Modal Player */}
-      {showVideoModal && file.downloadUrl && (
+      {showVideoModal && (resolvedVideoUrl || file.downloadUrl) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
           <div className="flex flex-col w-full max-w-2xl bg-black rounded-[18px] overflow-hidden">
             <div className="flex items-center justify-between p-4 bg-zinc-900 text-white">
@@ -178,7 +195,7 @@ export const FileCard: React.FC<FileCardProps> = ({
               </button>
             </div>
             <video
-              src={file.downloadUrl}
+              src={resolvedVideoUrl || file.downloadUrl}
               controls
               autoPlay
               className="w-full max-h-[70vh] bg-black"

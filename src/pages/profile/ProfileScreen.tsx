@@ -14,18 +14,47 @@ import {
   FileText,
   LogOut,
   CheckCircle,
-  Clock,
   Sparkles,
+  Camera,
 } from 'lucide-react';
 import { EditProfileModal } from './EditProfileModal';
+import { resizeAndCompressImage } from '../../firebase/storageService';
 
 export const ProfileScreen: React.FC = () => {
-  const { profile, role, signOutUser, firebaseUser } = useAuth();
+  const { profile, role, signOutUser, firebaseUser, updateProfileData } = useAuth();
   const navigate = useNavigate();
 
   const [application, setApplication] = useState<TeacherApplication | null>(null);
   const [submissionCount, setSubmissionCount] = useState(0);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [updatingPhoto, setUpdatingPhoto] = useState(false);
+
+  const handleDirectPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const isImage = file.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|svg)$/i.test(file.name);
+      if (!isImage) return;
+
+      try {
+        setUpdatingPhoto(true);
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          try {
+            const raw = reader.result as string;
+            const compressed = await resizeAndCompressImage(raw, 256, 256, 0.8);
+            await updateProfileData({ photoURL: compressed });
+          } catch (err) {
+            console.error('Failed to update photo:', err);
+          } finally {
+            setUpdatingPhoto(false);
+          }
+        };
+        reader.readAsDataURL(file);
+      } catch {
+        setUpdatingPhoto(false);
+      }
+    }
+  };
 
   useEffect(() => {
     if (!firebaseUser) return;
@@ -80,7 +109,7 @@ export const ProfileScreen: React.FC = () => {
     <div className="max-w-md mx-auto space-y-6">
       {/* Profile Header (Matches PDF Page 8) */}
       <div className="flex flex-col items-center text-center space-y-3 pt-4">
-        <div className="relative">
+        <div className="relative group">
           {profile?.photoURL ? (
             <img
               src={profile.photoURL}
@@ -92,19 +121,44 @@ export const ProfileScreen: React.FC = () => {
               {initials}
             </div>
           )}
-          <button
-            onClick={() => setIsEditModalOpen(true)}
-            className="absolute bottom-0 right-0 p-2 rounded-full bg-white dark:bg-[#18122b] text-[#6D28D9] border border-[#E6E0F5] shadow-sm hover:scale-105 transition-transform"
-            aria-label="Edit Profile"
+
+          {/* Quick change photo button */}
+          <label
+            className="absolute bottom-0 right-0 p-2 rounded-full bg-white dark:bg-[#18122b] text-[#6D28D9] border border-[#E6E0F5] dark:border-[#2e234c] shadow-sm hover:scale-105 transition-transform cursor-pointer"
+            aria-label="Change Profile Photo"
+            title="Change photo"
           >
-            <Edit2 size={14} strokeWidth={2} />
-          </button>
+            <Camera size={14} strokeWidth={2} />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleDirectPhotoChange}
+              disabled={updatingPhoto}
+              className="hidden"
+            />
+          </label>
         </div>
 
+        {updatingPhoto && (
+          <span className="text-xs text-[#6D28D9] font-medium animate-pulse">
+            Updating profile photo...
+          </span>
+        )}
+
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-[#1C1530] dark:text-white">
-            {profile?.displayName || 'Scholar'}
-          </h1>
+          <div className="flex items-center justify-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-extrabold text-[#1C1530] dark:text-white">
+              {profile?.displayName || 'Scholar'}
+            </h1>
+            <button
+              onClick={() => setIsEditModalOpen(true)}
+              className="p-1.5 rounded-full text-[#6D28D9] hover:bg-[#EDE5FF] transition-colors"
+              aria-label="Edit Profile"
+              title="Edit Profile"
+            >
+              <Edit2 size={15} strokeWidth={2} />
+            </button>
+          </div>
           <p className="text-xs text-[#5B5470] dark:text-[#a49cb5] mt-0.5">
             @{profile?.username || 'user'}
           </p>
