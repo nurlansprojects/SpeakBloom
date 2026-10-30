@@ -4,7 +4,7 @@ import { collection, query, where, getDocs, onSnapshot, orderBy } from 'firebase
 import { db, handleFirestoreError, OperationType } from '../../firebase/config';
 import { useAuth } from '../../context/AuthContext';
 import { Lesson, BLOOM_LEVELS, BloomLevelNumber } from '../../types';
-import { Check, ChevronRight, BookOpen, Clock, AlertCircle } from 'lucide-react';
+import { Check, ChevronRight, BookOpen, Clock, AlertCircle, Lock } from 'lucide-react';
 import { Logo } from '../../components/common/Logo';
 
 export const StudentHome: React.FC = () => {
@@ -72,7 +72,7 @@ export const StudentHome: React.FC = () => {
               />
             </div>
             <p className="text-xs font-medium text-purple-100">
-              3 of 6 activities done
+              3 of 6 stages done
             </p>
           </div>
         </div>
@@ -139,9 +139,17 @@ export const StudentHome: React.FC = () => {
 
                   {/* Title & Teacher info */}
                   <div className="min-w-0 flex-1">
-                    <span className="text-[11px] font-semibold text-[#6D28D9] dark:text-[#a78bfa] block">
-                      6 activities
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-semibold text-[#6D28D9] dark:text-[#a78bfa] block">
+                        6 stages
+                      </span>
+                      {lesson.isLocked && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.2 text-[10px] font-bold rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+                          <Lock size={10} />
+                          <span>Locked</span>
+                        </span>
+                      )}
+                    </div>
                     <h3 className="text-sm sm:text-base font-bold text-[#1C1530] dark:text-white truncate">
                       {lesson.title}
                     </h3>
@@ -154,7 +162,7 @@ export const StudentHome: React.FC = () => {
                 {/* Status Badge */}
                 <div className="shrink-0 pl-2">
                   <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-[#EDE5FF] text-[#6D28D9] dark:bg-[#2e1d54] dark:text-[#a78bfa]">
-                    {idx === 0 ? 'New' : '2/6'}
+                    {lesson.isLocked ? 'Locked' : idx === 0 ? 'New' : '2/6'}
                   </span>
                 </div>
               </div>

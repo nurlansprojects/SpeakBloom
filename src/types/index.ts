@@ -106,6 +106,7 @@ export interface Lesson {
   thumbnailUrl?: string;
   status: 'draft' | 'published';
   unlockMode: 'sequential' | 'open';
+  isLocked?: boolean;
   createdAt: string;
   updatedAt: string;
   files: LessonFile[];
@@ -142,8 +143,13 @@ export interface Activity {
   fileRefs?: string[];
   requiresReview: boolean;
   order: number;
+  isLocked?: boolean;
   settings: ActivitySettings;
 }
+
+export type Stage = Activity;
+export type StageType = ActivityType;
+export const STAGE_TYPES = ACTIVITY_TYPES;
 
 export type QuizQuestionType =
   | 'single_choice'

@@ -46,11 +46,20 @@ export const AdminOverview: React.FC = () => {
       }
     );
 
+    // Count lessons
+    const lessonsRef = collection(db, 'lessons');
+    const unsubLessons = onSnapshot(lessonsRef, (snapshot) => {
+      setLessonCount(snapshot.size);
+    });
+
     return () => {
       unsubUsers();
       unsubApps();
+      unsubLessons();
     };
   }, []);
+
+  const [lessonCount, setLessonCount] = useState(0);
 
   const handleApproveTeacher = async (app: TeacherApplication) => {
     try {
@@ -82,33 +91,66 @@ export const AdminOverview: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto space-y-6">
-      {/* Title (Matches PDF Page 7: "Admin") */}
+      {/* Title */}
       <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#1C1530] dark:text-white">
         Admin
       </h1>
 
-      {/* Metrics Row (Matches PDF Page 7: Students, Teachers) */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="p-4 bg-white dark:bg-[#18122b] rounded-[18px] border border-[#E6E0F5] dark:border-[#2e234c] shadow-sm">
-          <p className="text-xs text-[#5B5470] dark:text-[#a49cb5] font-medium">
+      {/* Metrics Row (Students, Teachers, Lessons) */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="p-3.5 bg-white dark:bg-[#18122b] rounded-[18px] border border-[#E6E0F5] dark:border-[#2e234c] shadow-sm text-center">
+          <p className="text-[11px] text-[#5B5470] dark:text-[#a49cb5] font-medium">
             Students
           </p>
-          <p className="text-2xl sm:text-3xl font-extrabold text-[#1C1530] dark:text-white mt-1">
+          <p className="text-xl sm:text-2xl font-extrabold text-[#1C1530] dark:text-white mt-0.5">
             {studentCount}
           </p>
         </div>
 
-        <div className="p-4 bg-white dark:bg-[#18122b] rounded-[18px] border border-[#E6E0F5] dark:border-[#2e234c] shadow-sm">
-          <p className="text-xs text-[#5B5470] dark:text-[#a49cb5] font-medium">
+        <div className="p-3.5 bg-white dark:bg-[#18122b] rounded-[18px] border border-[#E6E0F5] dark:border-[#2e234c] shadow-sm text-center">
+          <p className="text-[11px] text-[#5B5470] dark:text-[#a49cb5] font-medium">
             Teachers
           </p>
-          <p className="text-2xl sm:text-3xl font-extrabold text-[#1C1530] dark:text-white mt-1">
+          <p className="text-xl sm:text-2xl font-extrabold text-[#1C1530] dark:text-white mt-0.5">
             {teacherCount}
+          </p>
+        </div>
+
+        <div
+          onClick={() => navigate('/admin/lessons')}
+          className="p-3.5 bg-[#EDE5FF] dark:bg-[#201838] rounded-[18px] border border-[#d8cff0] dark:border-[#2e234c] shadow-sm text-center cursor-pointer hover:border-[#6D28D9] transition-colors"
+        >
+          <p className="text-[11px] text-[#6D28D9] dark:text-[#a78bfa] font-semibold">
+            Lessons
+          </p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[#6D28D9] dark:text-[#a78bfa] mt-0.5">
+            {lessonCount}
           </p>
         </div>
       </div>
 
-      {/* Teacher Applications Section (Matches PDF Page 7) */}
+      {/* Manage Lessons & Stages Card */}
+      <div
+        onClick={() => navigate('/admin/lessons')}
+        className="cursor-pointer flex items-center justify-between p-4 bg-white dark:bg-[#18122b] rounded-[18px] border border-[#E6E0F5] dark:border-[#2e234c] hover:border-[#8B5CF6] transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-[12px] bg-[#EDE5FF] text-[#6D28D9] flex items-center justify-center">
+            <FileText size={20} strokeWidth={2} />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-[#1C1530] dark:text-white">
+              Manage Lessons & Stages
+            </h3>
+            <p className="text-xs text-[#5B5470]">
+              Edit, delete, and lock lessons & Bloom stages
+            </p>
+          </div>
+        </div>
+        <ChevronRight size={18} className="text-[#5B5470]" />
+      </div>
+
+      {/* Teacher Applications Section */}
       <div className="space-y-3 pt-2">
         <h2 className="text-lg font-bold text-[#1C1530] dark:text-white">
           Teacher applications
@@ -144,7 +186,7 @@ export const AdminOverview: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Decline & Make teacher action buttons (Matches PDF Page 7) */}
+                {/* Decline & Make teacher action buttons */}
                 <div className="flex items-center gap-2 pt-1">
                   <button
                     onClick={() => handleDeclineTeacher(app)}
@@ -165,7 +207,7 @@ export const AdminOverview: React.FC = () => {
         )}
       </div>
 
-      {/* Give admin role shortcut row (Matches PDF Page 7) */}
+      {/* Give admin role shortcut row */}
       <div
         onClick={() => navigate('/admin/users')}
         className="cursor-pointer flex items-center justify-between p-4 bg-white dark:bg-[#18122b] rounded-[18px] border border-[#E6E0F5] dark:border-[#2e234c] hover:border-[#8B5CF6] transition-colors"

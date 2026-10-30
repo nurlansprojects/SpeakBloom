@@ -4,7 +4,7 @@ import { collection, query, where, onSnapshot, doc, deleteDoc, updateDoc } from 
 import { db, handleFirestoreError, OperationType } from '../../firebase/config';
 import { useAuth } from '../../context/AuthContext';
 import { Lesson } from '../../types';
-import { Plus, BookOpen, Users, CheckCircle, FileText, ChevronRight, Edit3, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, BookOpen, Users, CheckCircle, FileText, ChevronRight, Edit3, Trash2, ArrowUp, ArrowDown, Lock, Unlock } from 'lucide-react';
 import { Logo } from '../../components/common/Logo';
 
 export const TeacherHome: React.FC = () => {
@@ -93,6 +93,21 @@ export const TeacherHome: React.FC = () => {
     newLessons[index] = newLessons[targetIndex];
     newLessons[targetIndex] = temp;
     setLessons(newLessons);
+  };
+
+  const handleToggleLock = async (e: React.MouseEvent, lesson: Lesson) => {
+    e.stopPropagation();
+    try {
+      await updateDoc(doc(db, 'lessons', lesson.id), {
+        isLocked: !lesson.isLocked,
+        updatedAt: new Date().toISOString(),
+      });
+      setLessons((prev) =>
+        prev.map((l) => (l.id === lesson.id ? { ...l, isLocked: !lesson.isLocked } : l))
+      );
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `lessons/${lesson.id}`);
+    }
   };
 
   return (
@@ -222,9 +237,9 @@ export const TeacherHome: React.FC = () => {
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="text-[11px] font-semibold text-[#6D28D9] dark:text-[#a78bfa] block">
-                          6 activities
+                          6 stages
                         </span>
                         <span
                           className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
@@ -235,8 +250,18 @@ export const TeacherHome: React.FC = () => {
                         >
                           {isLive ? 'Live' : 'Draft'}
                         </span>
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full ${
+                            lesson.isLocked
+                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300'
+                              : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
+                          }`}
+                        >
+                          {lesson.isLocked ? <Lock size={10} /> : <Unlock size={10} />}
+                          <span>{lesson.isLocked ? 'Locked' : 'Unlocked'}</span>
+                        </span>
                       </div>
-                      <h3 className="text-sm sm:text-base font-bold text-[#1C1530] dark:text-white truncate">
+                      <h3 className="text-sm sm:text-base font-bold text-[#1C1530] dark:text-white truncate mt-0.5">
                         {lesson.title}
                       </h3>
                       <p className="text-xs text-[#5B5470] dark:text-[#a49cb5] truncate">
@@ -245,8 +270,21 @@ export const TeacherHome: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Actions: Edit & Delete buttons */}
-                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-center" onClick={(e) => e.stopPropagation()}>
+                  {/* Actions: Lock toggle, Edit & Delete buttons */}
+                  <div className="flex flex-wrap items-center gap-2 shrink-0 self-end sm:self-center" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      onClick={(e) => handleToggleLock(e, lesson)}
+                      className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-[10px] transition-colors ${
+                        lesson.isLocked
+                          ? 'bg-amber-100 hover:bg-amber-200 text-amber-900 dark:bg-amber-950/50 dark:text-amber-300'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                      }`}
+                      title={lesson.isLocked ? 'Click to Unlock this lesson' : 'Click to Lock this lesson'}
+                    >
+                      {lesson.isLocked ? <Lock size={13} /> : <Unlock size={13} />}
+                      <span>{lesson.isLocked ? 'Locked' : 'Unlock'}</span>
+                    </button>
                     <button
                       type="button"
                       onClick={() => navigate(`/edit-lesson/${lesson.id}`)}

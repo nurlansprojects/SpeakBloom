@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../../firebase/config';
 import { Lesson } from '../../types';
-import { Search, Filter, BookOpen } from 'lucide-react';
+import { Search, Filter, BookOpen, Lock } from 'lucide-react';
 import { Logo } from '../../components/common/Logo';
 
 export const LessonsCatalog: React.FC = () => {
@@ -126,9 +126,17 @@ export const LessonsCatalog: React.FC = () => {
                     <Logo size={48} />
                   </div>
                 )}
-                <span className="absolute bottom-2.5 right-2.5 px-2.5 py-1 text-[11px] font-bold rounded-full bg-black/60 text-white backdrop-blur-sm">
-                  6 activities
-                </span>
+                <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5">
+                  {lesson.isLocked && (
+                    <span className="px-2 py-1 text-[11px] font-bold rounded-full bg-amber-500/90 text-white backdrop-blur-sm inline-flex items-center gap-1">
+                      <Lock size={11} />
+                      <span>Locked</span>
+                    </span>
+                  )}
+                  <span className="px-2.5 py-1 text-[11px] font-bold rounded-full bg-black/60 text-white backdrop-blur-sm">
+                    6 stages
+                  </span>
+                </div>
               </div>
 
               {/* Lesson Card Details */}

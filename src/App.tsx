@@ -16,6 +16,7 @@ import { TeacherApplicationScreen } from './pages/profile/TeacherApplicationScre
 import { MessagesScreen } from './pages/messages/MessagesScreen';
 import { AdminOverview } from './pages/admin/AdminOverview';
 import { AdminUsers } from './pages/admin/AdminUsers';
+import { AdminLessons } from './pages/admin/AdminLessons';
 import { NotificationsScreen } from './pages/notifications/NotificationsScreen';
 
 const AppRoutes: React.FC = () => {
@@ -75,6 +76,7 @@ const AppRoutes: React.FC = () => {
 
         {/* Admin Routes */}
         <Route path="/admin/overview" element={<AdminOverview />} />
+        <Route path="/admin/lessons" element={<AdminLessons />} />
         <Route path="/admin/users" element={<AdminUsers />} />
         <Route path="/admin/requests" element={<AdminOverview />} />
         <Route path="/admin/settings" element={<ProfileScreen />} />

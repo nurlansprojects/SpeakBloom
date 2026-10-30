@@ -152,6 +152,13 @@ export const LessonDetail: React.FC = () => {
   }).length;
 
   const getActivityStatus = (level: BloomLevelNumber) => {
+    // If the entire lesson is locked, all stages are locked
+    if (lesson.isLocked) return 'locked';
+
+    // If this specific stage is locked by teacher or administrator
+    const activity = activities.find((a) => a.bloomLevel === level);
+    if (activity?.isLocked) return 'locked';
+
     const sub = submissions[level];
     if (sub) {
       if (sub.status === 'approved' || sub.status === 'passed') return 'done';
@@ -217,6 +224,19 @@ export const LessonDetail: React.FC = () => {
         </div>
       )}
 
+      {/* Lesson Locked Banner if locked */}
+      {lesson.isLocked && (
+        <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-[18px] text-amber-900 dark:text-amber-200 text-xs sm:text-sm">
+          <Lock size={20} className="shrink-0 text-amber-600" />
+          <div>
+            <p className="font-bold">This lesson is locked</p>
+            <p className="text-amber-800/80 dark:text-amber-300/80 text-xs mt-0.5">
+              The teacher or administrator has locked access to this lesson. Stages cannot be started or submitted at this time.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Lesson Header Title & Overview */}
       <div className="space-y-3">
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#1C1530] dark:text-white">
@@ -256,29 +276,30 @@ export const LessonDetail: React.FC = () => {
         </div>
       )}
 
-      {/* Bloom Activities Section (Matches PDF Page 3) */}
+      {/* Bloom Stages Section */}
       <div className="space-y-4 pt-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-[#1C1530] dark:text-white">
-            Bloom activities
+            Bloom stages
           </h2>
           <span className="text-sm font-semibold text-[#6D28D9] dark:text-[#a78bfa]">
             {completedCount} / 6
           </span>
         </div>
 
-        {/* 6 Numbered Activities Stack */}
+        {/* 6 Numbered Stages Stack */}
         <div className="space-y-3">
           {allLevels.map((lvl) => {
             const activity = activities.find((a) => a.bloomLevel === lvl);
             const status = getActivityStatus(lvl);
             const isLocked = status === 'locked';
+            const isStageSpecificLocked = !!activity?.isLocked;
 
             return (
               <div
                 key={lvl}
                 onClick={() => {
-                  if (!isLocked && activity) {
+                  if (!isLocked && activity && !lesson.isLocked) {
                     navigate(`/lessons/${lesson.id}/activity/${activity.id}`);
                   }
                 }}
@@ -306,10 +327,10 @@ export const LessonDetail: React.FC = () => {
 
                   <div className="min-w-0 flex-1">
                     <span className="text-[11px] font-semibold text-[#6D28D9] dark:text-[#a78bfa] block">
-                      {lvl} · {BLOOM_LEVELS[lvl].name}
+                      Stage {lvl} · {BLOOM_LEVELS[lvl].name}
                     </span>
                     <h3 className="text-sm sm:text-base font-bold text-[#1C1530] dark:text-white truncate">
-                      {activity?.title || `${BLOOM_LEVELS[lvl].name} Activity`}
+                      {activity?.title || `${BLOOM_LEVELS[lvl].name} Stage`}
                     </h3>
                     <p className="text-xs text-[#5B5470] dark:text-[#a49cb5] truncate">
                       {activity
@@ -349,7 +370,7 @@ export const LessonDetail: React.FC = () => {
                   {status === 'locked' && (
                     <span className="px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 inline-flex items-center gap-1">
                       <Lock size={12} strokeWidth={2} />
-                      <span>Locked</span>
+                      <span>{isStageSpecificLocked ? 'Stage Locked' : lesson.isLocked ? 'Lesson Locked' : 'Locked'}</span>
                     </span>
                   )}
                 </div>

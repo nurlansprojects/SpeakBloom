@@ -39,6 +39,8 @@ import {
   RotateCcw,
   CheckCircle2,
   HelpCircle,
+  Lock,
+  Unlock,
 } from 'lucide-react';
 import { RichTextEditor } from '../../components/common/RichTextEditor';
 import { RichTextView } from '../../components/common/RichTextView';
@@ -56,7 +58,7 @@ import {
 export const LessonEditor: React.FC = () => {
   const { lessonId } = useParams<{ lessonId?: string }>();
   const navigate = useNavigate();
-  const { firebaseUser, profile } = useAuth();
+  const { firebaseUser, profile, role } = useAuth();
 
   const isEditing = !!lessonId;
   const currentId = lessonId || `lesson_${Date.now()}`;
@@ -67,6 +69,9 @@ export const LessonEditor: React.FC = () => {
   const [files, setFiles] = useState<LessonFile[]>([]);
   const [unlockMode, setUnlockMode] = useState<'sequential' | 'open'>('sequential');
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
+  const [isLocked, setIsLocked] = useState(false);
+  const [existingTeacherId, setExistingTeacherId] = useState<string | null>(null);
+  const [existingTeacherName, setExistingTeacherName] = useState<string | null>(null);
 
   // Six activities, one per level (1 to 6)
   const [activities, setActivities] = useState<Record<BloomLevelNumber, Activity>>({
@@ -177,6 +182,9 @@ export const LessonEditor: React.FC = () => {
           setFiles(data.files || []);
           setUnlockMode(data.unlockMode || 'sequential');
           setStatus(data.status || 'draft');
+          setIsLocked(!!data.isLocked);
+          if (data.teacherId) setExistingTeacherId(data.teacherId);
+          if (data.teacherName) setExistingTeacherName(data.teacherName);
         }
 
         const actsSnap = await getDocs(collection(db, 'lessons', lessonId, 'activities'));
@@ -311,6 +319,14 @@ export const LessonEditor: React.FC = () => {
     }));
   };
 
+  const handleNavigateBack = () => {
+    if (role === 'admin') {
+      navigate('/admin/lessons');
+    } else {
+      navigate('/teacher');
+    }
+  };
+
   // Delete entire lesson
   const handleDeleteThisLesson = async () => {
     if (!isEditing) return;
@@ -319,7 +335,7 @@ export const LessonEditor: React.FC = () => {
     try {
       setSaving(true);
       await deleteDoc(doc(db, 'lessons', currentId));
-      navigate('/teacher');
+      handleNavigateBack();
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, `lessons/${currentId}`);
     } finally {
@@ -385,13 +401,14 @@ export const LessonEditor: React.FC = () => {
 
       const rawLessonDoc = {
         id: currentId,
-        teacherId: firebaseUser.uid,
-        teacherName: profile?.displayName || firebaseUser.displayName || 'Teacher',
+        teacherId: existingTeacherId || firebaseUser.uid,
+        teacherName: existingTeacherName || profile?.displayName || firebaseUser.displayName || 'Teacher',
         title: title.trim(),
         descriptionHtml: descriptionHtml || '',
         thumbnailUrl: finalThumbnailUrl || '',
         status: targetStatus,
         unlockMode: unlockMode || 'sequential',
+        isLocked: !!isLocked,
         files: sanitizedFiles,
         studentCount: 0,
         createdAt: new Date().toISOString(),
@@ -400,7 +417,7 @@ export const LessonEditor: React.FC = () => {
 
       const lessonDoc = cleanObjectForFirestore(rawLessonDoc);
 
-      // Save main lesson document and all 6 activities in parallel for instant publishing
+      // Save main lesson document and all 6 stages in parallel for instant publishing
       const saveTasks = [setDoc(doc(db, 'lessons', currentId), lessonDoc)];
 
       const levels: BloomLevelNumber[] = [1, 2, 3, 4, 5, 6];
@@ -416,6 +433,7 @@ export const LessonEditor: React.FC = () => {
           fileRefs: act?.fileRefs || [],
           requiresReview: typeof act?.requiresReview === 'boolean' ? act.requiresReview : true,
           order: lvl,
+          isLocked: !!act?.isLocked,
           settings: act?.settings || {},
         };
         const sanitizedAct = cleanObjectForFirestore(rawAct);
@@ -425,7 +443,7 @@ export const LessonEditor: React.FC = () => {
       await Promise.all(saveTasks);
 
       setStatus(targetStatus);
-      navigate('/teacher');
+      handleNavigateBack();
     } catch (err: any) {
       console.error('Save lesson failed:', err);
       const errMsg = err?.message || String(err);
@@ -440,10 +458,10 @@ export const LessonEditor: React.FC = () => {
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Top Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-[#E6E0F5] dark:border-[#2e234c]">
+      <div className="flex flex-wrap items-center justify-between pb-4 border-b border-[#E6E0F5] dark:border-[#2e234c] gap-3">
         <button
           type="button"
-          onClick={() => navigate('/teacher')}
+          onClick={handleNavigateBack}
           className="text-sm font-semibold text-[#5B5470] hover:text-[#1C1530] dark:text-[#a49cb5]"
         >
           Cancel
@@ -454,6 +472,21 @@ export const LessonEditor: React.FC = () => {
         </h1>
 
         <div className="flex items-center gap-2">
+          {/* Lesson Lock / Unlock Switch */}
+          <button
+            type="button"
+            onClick={() => setIsLocked(!isLocked)}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-[10px] border transition-colors ${
+              isLocked
+                ? 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/50 dark:text-amber-300'
+                : 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300'
+            }`}
+            title={isLocked ? 'Click to Unlock this lesson for students' : 'Click to Lock this lesson'}
+          >
+            {isLocked ? <Lock size={13} /> : <Unlock size={13} />}
+            <span>{isLocked ? 'Lesson Locked' : 'Lesson Unlocked'}</span>
+          </button>
+
           {isEditing && (
             <button
               type="button"
@@ -631,15 +664,15 @@ export const LessonEditor: React.FC = () => {
             )}
           </div>
 
-          {/* Six Activity Slots with Moveable Sort and Edit/Delete */}
+          {/* Six Stage Slots with Moveable Sort, Lock Toggle, and Edit */}
           <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-base font-bold text-[#1C1530] dark:text-white">
-                  Activities (6 levels)
+                  Stages (6 Bloom's Taxonomy levels)
                 </h2>
                 <p className="text-xs text-[#5B5470]">
-                  Move up or down to rearrange activities across Bloom levels.
+                  Reorder stages or lock specific stages to control student progress.
                 </p>
               </div>
             </div>
@@ -648,21 +681,26 @@ export const LessonEditor: React.FC = () => {
               {allLevels.map((lvl) => {
                 const act = activities[lvl];
                 const typeMeta = ACTIVITY_TYPES[act.type] || ACTIVITY_TYPES['voice_recording'];
+                const isStageLocked = !!act.isLocked;
 
                 return (
                   <div
                     key={lvl}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-white dark:bg-[#18122b] rounded-[18px] border border-[#E6E0F5] dark:border-[#2e234c] hover:border-[#8B5CF6] transition-colors gap-3"
+                    className={`flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-[18px] border transition-colors gap-3 ${
+                      isStageLocked
+                        ? 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40'
+                        : 'bg-white dark:bg-[#18122b] border-[#E6E0F5] dark:border-[#2e234c] hover:border-[#8B5CF6]'
+                    }`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      {/* Move Up / Down Buttons for Activity Sorting */}
+                      {/* Move Up / Down Buttons for Stage Sorting */}
                       <div className="flex flex-col gap-1 shrink-0">
                         <button
                           type="button"
                           onClick={() => handleMoveActivity(lvl, 'up')}
                           disabled={lvl === 1}
                           className="p-1 text-[#5B5470] hover:text-[#6D28D9] disabled:opacity-20"
-                          title="Move Activity Up"
+                          title="Move Stage Up"
                         >
                           <ArrowUp size={14} strokeWidth={2.5} />
                         </button>
@@ -671,19 +709,32 @@ export const LessonEditor: React.FC = () => {
                           onClick={() => handleMoveActivity(lvl, 'down')}
                           disabled={lvl === 6}
                           className="p-1 text-[#5B5470] hover:text-[#6D28D9] disabled:opacity-20"
-                          title="Move Activity Down"
+                          title="Move Stage Down"
                         >
                           <ArrowDown size={14} strokeWidth={2.5} />
                         </button>
                       </div>
 
-                      <div className="w-10 h-10 rounded-[12px] bg-[#EDE5FF] dark:bg-[#201838] text-[#6D28D9] flex items-center justify-center shrink-0">
+                      <div
+                        className={`w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 ${
+                          isStageLocked
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-[#EDE5FF] dark:bg-[#201838] text-[#6D28D9]'
+                        }`}
+                      >
                         <ActivityIcon type={act.type} size={20} strokeWidth={1.8} />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-bold text-[#6D28D9]">
-                          {lvl} · {BLOOM_LEVELS[lvl].name}
-                        </p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-xs font-bold text-[#6D28D9]">
+                            Stage {lvl} · {BLOOM_LEVELS[lvl].name}
+                          </p>
+                          {isStageLocked && (
+                            <span className="px-1.5 py-0.2 text-[9px] font-bold rounded bg-amber-200 text-amber-900">
+                              Locked
+                            </span>
+                          )}
+                        </div>
                         <p className="text-sm font-semibold text-[#1C1530] dark:text-white truncate">
                           {act.title}
                         </p>
@@ -694,11 +745,31 @@ export const LessonEditor: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                      {/* Individual Stage Lock Toggle Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActivities((prev) => ({
+                            ...prev,
+                            [lvl]: { ...prev[lvl], isLocked: !prev[lvl].isLocked },
+                          }));
+                        }}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-[10px] transition-colors ${
+                          isStageLocked
+                            ? 'bg-amber-100 hover:bg-amber-200 text-amber-900'
+                            : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                        }`}
+                        title={isStageLocked ? 'Unlock this Stage for students' : 'Lock this Stage'}
+                      >
+                        {isStageLocked ? <Lock size={12} /> : <Unlock size={12} />}
+                        <span>{isStageLocked ? 'Locked' : 'Unlock'}</span>
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => handleResetActivity(lvl)}
                         className="p-1.5 text-xs text-[#5B5470] hover:text-red-600 rounded-[10px]"
-                        title="Reset this activity slot"
+                        title="Reset this stage"
                       >
                         <RotateCcw size={14} />
                       </button>
@@ -707,7 +778,7 @@ export const LessonEditor: React.FC = () => {
                         onClick={() => setEditingLevel(lvl)}
                         className="px-3.5 py-1.5 text-xs font-semibold text-[#6D28D9] bg-[#EDE5FF] hover:bg-[#d8cff0] rounded-[10px] transition-colors"
                       >
-                        Edit ›
+                        Edit Stage ›
                       </button>
                     </div>
                   </div>
@@ -758,7 +829,7 @@ export const LessonEditor: React.FC = () => {
 
               <div className="space-y-2">
                 <span className="text-xs font-bold text-[#1C1530]">
-                  Bloom activities 0 / 6
+                  Bloom stages 0 / 6
                 </span>
                 {allLevels.map((lvl) => (
                   <div
@@ -856,10 +927,10 @@ const ActivityConfigModal: React.FC<ActivityConfigModalProps> = ({
         <div className="flex items-center justify-between border-b border-[#E6E0F5] dark:border-[#2e234c] pb-3">
           <div>
             <span className="text-xs font-bold text-[#6D28D9]">
-              Level {level} · {BLOOM_LEVELS[level].name}
+              Stage {level} · {BLOOM_LEVELS[level].name}
             </span>
             <h3 className="text-lg font-bold text-[#1C1530] dark:text-white">
-              Configure Activity & Settings
+              Configure Stage & Settings
             </h3>
           </div>
           <button
@@ -871,9 +942,36 @@ const ActivityConfigModal: React.FC<ActivityConfigModalProps> = ({
           </button>
         </div>
 
+        {/* Stage Lock Toggle inside Modal */}
+        <div className="flex items-center justify-between p-3.5 bg-[#F7F4FF] dark:bg-[#201838] rounded-xl border border-[#E6E0F5] dark:border-[#2e234c]">
+          <div>
+            <span className="text-xs font-bold text-[#1C1530] dark:text-white flex items-center gap-1.5">
+              {current.isLocked ? <Lock size={14} className="text-amber-600" /> : <Unlock size={14} className="text-emerald-600" />}
+              <span>Stage Lock Status</span>
+            </span>
+            <p className="text-[11px] text-[#5B5470] mt-0.5">
+              {current.isLocked
+                ? 'This stage is currently locked. Students cannot open or submit this stage.'
+                : 'This stage is unlocked. Students can access it normally.'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setCurrent({ ...current, isLocked: !current.isLocked })}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+              current.isLocked
+                ? 'bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300'
+                : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300'
+            }`}
+          >
+            {current.isLocked ? <Lock size={12} /> : <Unlock size={12} />}
+            <span>{current.isLocked ? 'Locked' : 'Unlocked'}</span>
+          </button>
+        </div>
+
         {/* Title */}
         <div className="space-y-1">
-          <label className="text-xs font-semibold text-[#5B5470]">Activity Title</label>
+          <label className="text-xs font-semibold text-[#5B5470]">Stage Title</label>
           <input
             type="text"
             value={current.title}
@@ -882,9 +980,9 @@ const ActivityConfigModal: React.FC<ActivityConfigModalProps> = ({
           />
         </div>
 
-        {/* Activity Type Picker */}
+        {/* Stage Type Picker */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-[#5B5470]">Select Activity Type</label>
+          <label className="text-xs font-semibold text-[#5B5470]">Select Stage Type</label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {(Object.keys(ACTIVITY_TYPES) as ActivityType[]).map((t) => (
               <button
@@ -1246,7 +1344,7 @@ const ActivityConfigModal: React.FC<ActivityConfigModalProps> = ({
             onClick={() => onSave(current)}
             className="px-5 py-2 text-xs font-semibold text-white bg-[#6D28D9] hover:bg-[#5B21B6] rounded-lg"
           >
-            Save Activity
+            Save Stage
           </button>
         </div>
       </div>

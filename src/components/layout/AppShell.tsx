@@ -52,10 +52,11 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   // Admin Navigation Items
   const adminNav = [
     { label: 'Overview', path: '/', icon: BarChart2 },
+    { label: 'Lessons', path: '/admin/lessons', icon: Book },
     { label: 'Users', path: '/admin/users', icon: Users },
     { label: 'Requests', path: '/admin/requests', icon: FileText },
     { label: 'Messages', path: '/messages', icon: MessageCircle },
-    { label: 'Settings', path: '/admin/settings', icon: Settings },
+    { label: 'Profile', path: '/profile', icon: User },
   ];
 
   const navItems = role === 'admin' ? adminNav : role === 'teacher' ? teacherNav : studentNav;

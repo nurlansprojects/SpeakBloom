@@ -73,8 +73,8 @@ export const ReviewQueue: React.FC = () => {
       try {
         await addDoc(collection(db, 'notifications'), {
           recipientId: selectedSub.studentId,
-          title: newStatus === 'approved' ? 'Activity Approved!' : 'Revision Requested',
-          body: `Your teacher reviewed your Level ${selectedSub.bloomLevel} submission for "${selectedSub.lessonTitle}". Feedback: ${feedbackText.trim() || 'Well done!'}`,
+          title: newStatus === 'approved' ? 'Stage Approved!' : 'Revision Requested',
+          body: `Your teacher reviewed your Stage ${selectedSub.bloomLevel} submission for "${selectedSub.lessonTitle}". Feedback: ${feedbackText.trim() || 'Well done!'}`,
           type: 'review',
           link: `/lessons/${selectedSub.lessonId}`,
           read: false,
@@ -164,7 +164,7 @@ export const ReviewQueue: React.FC = () => {
                   >
                     <div className="min-w-0 flex-1">
                       <span className="text-[11px] font-bold text-[#6D28D9] block">
-                        {sub.bloomLevel} · Level {sub.bloomLevel}
+                        Stage {sub.bloomLevel}
                       </span>
                       <h3 className="text-sm font-bold text-[#1C1530] dark:text-white truncate">
                         {sub.studentName}
@@ -207,7 +207,7 @@ export const ReviewQueue: React.FC = () => {
                   </p>
                 </div>
                 <span className="px-3 py-1 text-xs font-bold rounded-full bg-[#EDE5FF] text-[#6D28D9]">
-                  {selectedSub.bloomLevel} · Level {selectedSub.bloomLevel}
+                  Stage {selectedSub.bloomLevel}
                 </span>
               </div>
 
